@@ -1,10 +1,13 @@
 #include "dc_motor_warpper.h"
 
-dc_motor::dc_motor(uint8_t ID_, pid* SpeedPID_, pid* PositionPID_, uint8_t pin_encoder_a_,uint8_t pin_encoder_b_,uint8_t pin_pwm_a_,uint8_t pin_pwm_b_, ESP32MotorControl& MotorControl_):\
-ID(ID_), SpeedPID(SpeedPID_), PositionPID(PositionPID_), pin_encoder_a(pin_encoder_a_), pin_encoder_b(pin_encoder_b_), pin_pwm_a(pin_pwm_a_), pin_pwm_b(pin_pwm_b_), MotorControl(MotorControl_)
+dc_motor::dc_motor(mcpwm_unit_t unitID_, mcpwm_timer_t pairID_, pid* SpeedPID_, pid* PositionPID_, \
+uint8_t pin_encoder_a_,uint8_t pin_encoder_b_,uint8_t pin_pwm_a_,uint8_t pin_pwm_b_, ESP32MotorControl* MotorControl_):\
+SpeedPID(SpeedPID_), PositionPID(PositionPID_), pin_encoder_a(pin_encoder_a_), pin_encoder_b(pin_encoder_b_),\
+pin_pwm_a(pin_pwm_a_), pin_pwm_b(pin_pwm_b_)//, MotorControl(MotorControl_)
 {
+    pairID = pairID_;
     encoder.attachHalfQuad(pin_encoder_a_,pin_encoder_b_);
-    MotorControl.attachMotor(pin_pwm_a_, pin_pwm_b_);
+    MotorControl->attachMotor(pairID_, pin_pwm_a_, pin_pwm_b_);
     RunState = Speed_Ctl;
 }
 
@@ -15,10 +18,7 @@ dc_motor::~dc_motor()
 void dc_motor::setSpeed(int8_t speed_){
     speed_ = speed_ > 100 ? 100 : speed_;
     speed_ = speed_ < -100 ? -100 : speed_;
-    if (speed_ >= 0) 
-        MotorControl.motorForward(ID, speed_);
-    else if (speed_ < 0) 
-        MotorControl.motorReverse(ID, -speed_);
+    MotorControl->motorMove((uint8_t)pairID, speed_);
 }
 
 void dc_motor::handle(){
@@ -44,11 +44,6 @@ int16_t dc_motor::getSpeed(){
         return realSpeed;   //too fast, data is useless
     
     int32_t speedRaw = (int32_t)(((int32_t)(RealPosition - lastPosition) * 100) / (int32_t)(millis() - lastTime));     //make the compiler use int32 division
-    // Serial.println("(R - L) * 100= " + String((int32_t)((RealPosition - lastPosition) * 100)));
-    // Serial.println("RealPosition = " + String(RealPosition) + "\nlastPosition = " + String(lastPosition));
-    // Serial.println("Time = " + String(millis()) + "\nlastTime = " + String(lastTime));
-    // Serial.println("Time - lastTime = " + String(millis() - lastTime));
-    // Serial.println("speedRaw = " + String(speedRaw));
     lastPosition = RealPosition;
     lastTime = millis();
     //FIXME: map the raw speed to -100 -- 100 here

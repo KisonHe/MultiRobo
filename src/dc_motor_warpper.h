@@ -3,13 +3,13 @@
 
 #include <Arduino.h>
 #include <ESP32Encoder.h>
-#include <ESP32MotorControl.h>
+#include "ESP32MotorControl.h"
 #include "pid.h"
 class dc_motor
 {
 enum RunState_t{Speed_Ctl, Position_Ctl};
 private:
-uint8_t ID; //can ONLY be 0 or 1, used in set speed
+mcpwm_timer_t pairID;
 int32_t TargetPosition = 0;
 int32_t RealPosition = 0;
 RunState_t RunState = Speed_Ctl;
@@ -23,7 +23,7 @@ uint8_t pin_encoder_a;
 uint8_t pin_encoder_b;
 uint8_t pin_pwm_a;
 uint8_t pin_pwm_b;
-ESP32MotorControl& MotorControl;
+ESP32MotorControl* MotorControl;
 void setSpeed(int8_t speed_);
 
 void Position_Run();
@@ -36,7 +36,7 @@ public:
     
     int32_t getRealPosition();
     int16_t getSpeed();
-    dc_motor(uint8_t ID_, pid* SpeedPID_, pid* PositionPID_, uint8_t pin_encoder_a_,uint8_t pin_encoder_b_,uint8_t pin_pwm_a_,uint8_t pin_pwm_b_, ESP32MotorControl& MotorControl_);
+    dc_motor(mcpwm_unit_t unitID_, mcpwm_timer_t pairID_, pid* SpeedPID_, pid* PositionPID_, uint8_t pin_encoder_a_,uint8_t pin_encoder_b_,uint8_t pin_pwm_a_,uint8_t pin_pwm_b_, ESP32MotorControl* MotorControl_);
     ~dc_motor();
 };
 
